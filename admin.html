@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Hamro Lunch Sewa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --saffron: #E8860A; --turmeric: #F5C842; --cream: #FDF8F0;
+    --bark: #2C1A0E; --leaf: #3A6B35; --leaf-light: #EAF3E8;
+    --red: #C0392B; --red-light: #FDECEA; --border: #EDE5D8; --gray: #6B7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #F5EFE6; color: var(--bark); min-height: 100vh; }
+
+  /* LOGIN */
+  #loginScreen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bark);
+  }
+  .login-box {
+    background: white; border-radius: 20px; padding: 48px 40px;
+    width: 100%; max-width: 380px; text-align: center;
+  }
+  .login-box .logo { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--bark); margin-bottom: 6px; }
+  .login-box .logo span { color: var(--saffron); }
+  .login-box p { color: var(--gray); font-size: 0.85rem; margin-bottom: 28px; }
+  .login-box input {
+    width: 100%; padding: 12px 14px; border: 2px solid var(--border); border-radius: 10px;
+    font-size: 0.95rem; font-family: 'Inter', sans-serif; margin-bottom: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .login-box input:focus { border-color: var(--saffron); }
+  .login-btn {
+    width: 100%; padding: 13px; background: var(--saffron); color: white;
+    border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .login-btn:hover { background: #d07509; }
+  .login-err { color: var(--red); font-size: 0.82rem; margin-top: 10px; display: none; }
+
+  /* ADMIN LAYOUT */
+  #adminScreen { display: none; }
+  header {
+    background: var(--bark); padding: 0 5%; height: 60px;
+    display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50;
+  }
+  .hlogo { font-family: 'Playfair Display', serif; color: var(--turmeric); font-size: 1.2rem; }
+  .hlogo span { color: var(--saffron); }
+  .logout-btn {
+    background: none; border: 1.5px solid #6B5A4A; color: #B8A898;
+    padding: 6px 16px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover { background: #3D2410; color: white; }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 36px 5% 60px; }
+
+  .page-title { font-family: 'Playfair Display', serif; font-size: 1.9rem; margin-bottom: 4px; }
+  .page-sub { color: var(--gray); font-size: 0.88rem; margin-bottom: 32px; }
+
+  /* ADD FORM */
+  .add-card {
+    background: white; border-radius: 16px; padding: 28px 24px;
+    border: 2px solid var(--saffron); margin-bottom: 36px;
+  }
+  .add-card h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .fg { display: flex; flex-direction: column; gap: 5px; }
+  .fg.full { grid-column: 1 / -1; }
+  label { font-size: 0.78rem; font-weight: 700; color: var(--bark); }
+  input, select, textarea {
+    border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px;
+    font-size: 0.88rem; font-family: 'Inter', sans-serif; background: var(--cream);
+    color: var(--bark); outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--saffron); }
+  .add-btn {
+    background: var(--saffron); color: white; border: none; padding: 12px 28px;
+    border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+  }
+  .add-btn:hover { background: #d07509; }
+  .add-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* EMOJI PICKER */
+  .emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .ep { font-size: 1.4rem; cursor: pointer; padding: 4px 6px; border-radius: 6px; border: 2px solid transparent; transition: all 0.15s; }
+  .ep:hover { background: #F5ECD9; }
+  .ep.selected { border-color: var(--saffron); background: #FFF3E0; }
+
+  /* MENU LIST */
+  .list-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .list-header h2 { font-size: 1.05rem; font-weight: 700; }
+  .item-count { background: var(--saffron); color: white; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 50px; }
+
+  .menu-list { display: flex; flex-direction: column; gap: 10px; }
+  .menu-row {
+    background: white; border-radius: 12px; border: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+    transition: box-shadow 0.2s;
+  }
+  .menu-row:hover { box-shadow: 0 4px 14px rgba(44,26,14,0.08); }
+  .row-emoji { font-size: 2rem; flex-shrink: 0; }
+  .row-info { flex: 1; min-width: 0; }
+  .row-info h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+  .row-info p { font-size: 0.78rem; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-tags { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+  .tag { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; }
+  .tag.veg { background: var(--leaf-light); color: var(--leaf); }
+  .tag.nonveg { background: var(--red-light); color: var(--red); }
+  .tag.special { background: #FFF8E1; color: #A67C00; }
+  .row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .edit-btn {
+    background: none; border: 1.5px solid var(--border); color: var(--bark);
+    padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .edit-btn:hover { border-color: var(--saffron); color: var(--saffron); }
+  .del-btn {
+    background: none; border: 1.5px solid #F5C6C2; color: var(--red);
+    padding: 6px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .del-btn:hover { background: var(--red-light); }
+  .avail-toggle { display: flex; align-items: center; gap: 6px; }
+  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #ccc; border-radius: 20px; cursor: pointer; transition: 0.3s; }
+  .slider:before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+  input:checked + .slider { background: var(--leaf); }
+  input:checked + .slider:before { transform: translateX(16px); }
+  .avail-label { font-size: 0.72rem; font-weight: 600; color: var(--gray); }
+
+  /* EDIT MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 18px; padding: 32px; max-width: 500px; width: 92%; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+  .save-btn { flex: 1; background: var(--saffron); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.93rem; font-weight: 700; cursor: pointer; }
+  .save-btn:hover { background: #d07509; }
+  .cancel-btn { flex: 1; background: white; color: var(--bark); border: 2px solid var(--border); padding: 12px; border-radius: 8px; font-size: 0.93rem; font-weight: 700; cursor: pointer; }
+  .cancel-btn:hover { border-color: var(--bark); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bark); color: white; padding: 11px 22px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; z-index: 999; transition: transform 0.3s; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 5px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--gray); }
+  .empty-state .big { font-size: 3rem; margin-bottom: 12px; }
+
+  .view-site-btn {
+    background: var(--leaf); color: white; border: none; padding: 9px 20px;
+    border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;
+    text-decoration: none; display: inline-block; transition: background 0.2s;
+  }
+  .view-site-btn:hover { background: #2d5529; }
+
+  @media (max-width: 600px) {
+    .form-row, .form-row.three { grid-template-columns: 1fr; }
+    .fg.full { grid-column: 1; }
+    .menu-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="logo">Hamro<span>Lunch</span></div>
+    <p>Admin Panel — Menu Manager</p>
+    <input type="password" id="pwInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter') login()" />
+    <button class="login-btn" onclick="login()">Login →</button>
+    <p class="login-err" id="loginErr">❌ Wrong password. Try again.</p>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="adminScreen">
+  <header>
+    <div class="hlogo">Hamro<span>Lunch</span> · Admin</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="index.html" class="view-site-btn" target="_blank">👁 View Website</a>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-title">🍱 Menu Manager</div>
+    <p class="page-sub">Add, edit, or remove menu items. Changes show on your website instantly.</p>
+
+    <!-- ADD FORM -->
+    <div class="add-card">
+      <h2>➕ Add New Menu Item</h2>
+      <div class="form-row">
+        <div class="fg">
+          <label>Dish Name *</label>
+          <input type="text" id="aName" placeholder="Dal Makhani + Rice" />
+        </div>
+        <div class="fg">
+          <label>Category *</label>
+          <select id="aCat">
+            <option value="veg">🥦 Vegetarian</option>
+            <option value="nonveg">🍗 Non-Vegetarian</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg full">
+          <label>Description</label>
+          <input type="text" id="aDesc" placeholder="Short description of the dish…" />
+        </div>
+      </div>
+      <div class="form-row three">
+        <div class="fg">
+          <label>Day Available</label>
+          <select id="aDay">
+            <option value="Daily">Daily</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Mark as Special?</label>
+          <select id="aSpecial">
+            <option value="no">No</option>
+            <option value="yes">⭐ Yes — Chef's Special</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Available?</label>
+          <select id="aAvail">
+            <option value="yes">✅ Yes</option>
+            <option value="no">❌ No (hidden)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:0.78rem;font-weight:700;display:block;margin-bottom:8px">Pick an Emoji for this dish</label>
+        <div class="emoji-grid" id="emojiGrid"></div>
+        <input type="hidden" id="aEmoji" value="🍱" />
+      </div>
+      <button class="add-btn" id="addBtn" onclick="addItem()">Add to Menu</button>
+    </div>
+
+    <!-- LIST -->
+    <div class="list-header">
+      <h2>Current Menu Items</h2>
+      <span class="item-count" id="itemCount">0 items</span>
+    </div>
+    <div class="menu-list" id="menuList">
+      <div class="empty-state"><div class="big">🍽️</div><p>No menu items yet. Add your first dish above!</p></div>
+    </div>
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2>✏️ Edit Menu Item</h2>
+    <input type="hidden" id="eId" />
+    <div class="fg" style="margin-bottom:14px">
+      <label>Dish Name *</label>
+      <input type="text" id="eName" />
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label>Description</label>
+      <input type="text" id="eDesc" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="fg">
+        <label>Category</label>
+        <select id="eCat">
+          <option value="veg">🥦 Vegetarian</option>
+          <option value="nonveg">🍗 Non-Vegetarian</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Day Available</label>
+        <select id="eDay">
+          <option value="Daily">Daily</option>
+          <option value="Monday">Monday</option>
+          <option value="Tuesday">Tuesday</option>
+          <option value="Wednesday">Wednesday</option>
+          <option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option>
+          <option value="Saturday">Saturday</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Chef's Special?</label>
+        <select id="eSpecial">
+          <option value="no">No</option>
+          <option value="yes">⭐ Yes</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Available?</label>
+        <select id="eAvail">
+          <option value="yes">✅ Yes</option>
+          <option value="no">❌ No (hidden)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:0.78rem;font-weight:700;display:block;margin-bottom:8px">Emoji</label>
+      <div class="emoji-grid" id="editEmojiGrid"></div>
+      <input type="hidden" id="eEmoji" />
+    </div>
+    <div class="modal-btns">
+      <button class="cancel-btn" onclick="closeEdit()">Cancel</button>
+      <button class="save-btn" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+// IMPORTANT: Replace with your Apps Script URL (same one as in index.html)
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+const ADMIN_PASSWORD = "hamro2026"; // Change this to your own password!
+
+const EMOJIS = ['🍱','🍛','🍲','🥘','🍗','🥗','🫓','🥣','🍳','🍚','🍜','🥩','🫕','🧆','🥙','🫔','🥞','🧇','🍢','🥟'];
+
+// ── AUTH ──
+function login() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminScreen').style.display = 'block';
+    localStorage.setItem('hls_admin', '1');
+    loadMenu();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('hls_admin');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminScreen').style.display = 'none';
+}
+
+// Auto-login if already logged in
+if (localStorage.getItem('hls_admin') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminScreen').style.display = 'block';
+}
+
+// ── EMOJI GRIDS ──
+function buildEmojiGrid(containerId, hiddenId) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = EMOJIS.map(e => `
+    <span class="ep" onclick="selectEmoji('${e}','${containerId}','${hiddenId}')">${e}</span>
+  `).join('');
+}
+buildEmojiGrid('emojiGrid', 'aEmoji');
+buildEmojiGrid('editEmojiGrid', 'eEmoji');
+
+function selectEmoji(emoji, gridId, hiddenId) {
+  document.querySelectorAll('#' + gridId + ' .ep').forEach(e => e.classList.remove('selected'));
+  event.target.classList.add('selected');
+  document.getElementById(hiddenId).value = emoji;
+}
+
+// ── LOCAL STORAGE MENU (works without Apps Script too) ──
+let menuItems = [];
+
+function loadMenu() {
+  const saved = localStorage.getItem('hls_menu');
+  if (saved) {
+    menuItems = JSON.parse(saved);
+  } else {
+    // Default starter menu
+    menuItems = [
+      { id: uid(), emoji:'🍛', name:'Dal Makhani + Jeera Rice', desc:'Slow-cooked black lentils in rich tomato-butter gravy with cumin rice.', cat:'veg', day:'Daily', special:'no', avail:'yes' },
+      { id: uid(), emoji:'🍗', name:'Chicken Curry + Roti', desc:'Home-style chicken in tangy onion-tomato masala with 3 soft rotis.', cat:'nonveg', day:'Daily', special:'no', avail:'yes' },
+      { id: uid(), emoji:'🥘', name:'Paneer Butter Masala', desc:'Cottage cheese in velvety tomato cream sauce.', cat:'veg', day:'Daily', special:'yes', avail:'yes' },
+      { id: uid(), emoji:'🍲', name:'Rajma Chawal', desc:'Kidney bean curry with steamed basmati rice.', cat:'veg', day:'Monday', special:'no', avail:'yes' },
+      { id: uid(), emoji:'🫓', name:'Chole Bhature', desc:'Spiced chickpeas with two fluffy bhature.', cat:'veg', day:'Friday', special:'yes', avail:'yes' },
+      { id: uid(), emoji:'🍱', name:'Thali of the Day', desc:'2 sabzis, dal, rice, 3 rotis, pickle and sweet.', cat:'veg', day:'Daily', special:'yes', avail:'yes' },
+    ];
+    saveLocal();
+  }
+  renderList();
+  syncToWebsite();
+}
+
+function saveLocal() {
+  localStorage.setItem('hls_menu', JSON.stringify(menuItems));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+}
+
+// ── ADD ITEM ──
+function addItem() {
+  const name = document.getElementById('aName').value.trim();
+  const cat  = document.getElementById('aCat').value;
+  const desc = document.getElementById('aDesc').value.trim();
+  const day  = document.getElementById('aDay').value;
+  const spec = document.getElementById('aSpecial').value;
+  const avail= document.getElementById('aAvail').value;
+  const emoji= document.getElementById('aEmoji').value || '🍱';
+
+  if (!name) { showToast('⚠️ Please enter a dish name'); return; }
+
+  const item = { id: uid(), emoji, name, desc, cat, day, special: spec, avail };
+  menuItems.push(item);
+  saveLocal();
+  renderList();
+  syncToWebsite();
+
+  // Reset form
+  document.getElementById('aName').value = '';
+  document.getElementById('aDesc').value = '';
+  document.getElementById('aCat').value = 'veg';
+  document.getElementById('aDay').value = 'Daily';
+  document.getElementById('aSpecial').value = 'no';
+  document.getElementById('aAvail').value = 'yes';
+  document.getElementById('aEmoji').value = '🍱';
+  document.querySelectorAll('#emojiGrid .ep').forEach(e => e.classList.remove('selected'));
+
+  showToast('✅ ' + name + ' added to menu!');
+}
+
+// ── RENDER LIST ──
+function renderList() {
+  const list = document.getElementById('menuList');
+  document.getElementById('itemCount').textContent = menuItems.length + ' items';
+
+  if (!menuItems.length) {
+    list.innerHTML = '<div class="empty-state"><div class="big">🍽️</div><p>No menu items yet. Add your first dish above!</p></div>';
+    return;
+  }
+
+  list.innerHTML = menuItems.map(item => `
+    <div class="menu-row" id="row_${item.id}" style="${item.avail==='no'?'opacity:0.5':''}">
+      <span class="row-emoji">${item.emoji}</span>
+      <div class="row-info">
+        <h3>${item.name}</h3>
+        <p>${item.desc || 'No description'} · ${item.day}</p>
+        <div class="row-tags">
+          <span class="tag ${item.cat}">${item.cat === 'veg' ? '🟢 Veg' : '🔴 Non-veg'}</span>
+          ${item.special === 'yes' ? '<span class="tag special">⭐ Special</span>' : ''}
+          ${item.avail === 'no' ? '<span class="tag" style="background:#F3F4F6;color:#6B7280">Hidden</span>' : ''}
+        </div>
+      </div>
+      <div class="avail-toggle">
+        <label class="toggle">
+          <input type="checkbox" ${item.avail==='yes'?'checked':''} onchange="toggleAvail('${item.id}', this.checked)" />
+          <span class="slider"></span>
+        </label>
+        <span class="avail-label">${item.avail==='yes'?'Visible':'Hidden'}</span>
+      </div>
+      <div class="row-actions">
+        <button class="edit-btn" onclick="openEdit('${item.id}')">✏️ Edit</button>
+        <button class="del-btn" onclick="deleteItem('${item.id}', '${item.name.replace(/'/g,"\\'")}')">🗑 Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── TOGGLE VISIBILITY ──
+function toggleAvail(id, checked) {
+  const item = menuItems.find(i => i.id === id);
+  if (item) {
+    item.avail = checked ? 'yes' : 'no';
+    saveLocal();
+    renderList();
+    syncToWebsite();
+    showToast(checked ? '✅ Item now visible on website' : '👁 Item hidden from website');
+  }
+}
+
+// ── DELETE ──
+function deleteItem(id, name) {
+  if (!confirm('Delete "' + name + '" from the menu?')) return;
+  menuItems = menuItems.filter(i => i.id !== id);
+  saveLocal();
+  renderList();
+  syncToWebsite();
+  showToast('🗑 ' + name + ' removed');
+}
+
+// ── EDIT ──
+function openEdit(id) {
+  const item = menuItems.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('eId').value = id;
+  document.getElementById('eName').value = item.name;
+  document.getElementById('eDesc').value = item.desc || '';
+  document.getElementById('eCat').value = item.cat;
+  document.getElementById('eDay').value = item.day;
+  document.getElementById('eSpecial').value = item.special;
+  document.getElementById('eAvail').value = item.avail;
+  document.getElementById('eEmoji').value = item.emoji;
+
+  // Mark emoji
+  document.querySelectorAll('#editEmojiGrid .ep').forEach(e => {
+    e.classList.toggle('selected', e.textContent === item.emoji);
+  });
+
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function saveEdit() {
+  const id = document.getElementById('eId').value;
+  const item = menuItems.find(i => i.id === id);
+  if (!item) return;
+
+  const name = document.getElementById('eName').value.trim();
+  if (!name) { showToast('⚠️ Dish name cannot be empty'); return; }
+
+  item.name    = name;
+  item.desc    = document.getElementById('eDesc').value.trim();
+  item.cat     = document.getElementById('eCat').value;
+  item.day     = document.getElementById('eDay').value;
+  item.special = document.getElementById('eSpecial').value;
+  item.avail   = document.getElementById('eAvail').value;
+  item.emoji   = document.getElementById('eEmoji').value || item.emoji;
+
+  saveLocal();
+  renderList();
+  syncToWebsite();
+  closeEdit();
+  showToast('✅ ' + name + ' updated!');
+}
+
+// Close modal on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEdit();
+});
+
+// ── SYNC TO WEBSITE ──
+// This writes the menu to localStorage so index.html can read it live
+function syncToWebsite() {
+  // Save in a format index.html can read
+  const publicMenu = menuItems.filter(i => i.avail === 'yes');
+  localStorage.setItem('hls_public_menu', JSON.stringify(publicMenu));
+
+  // Also try to sync to Apps Script if URL is set
+  if (SCRIPT_URL !== "YOUR_APPS_SCRIPT_URL_HERE") {
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'syncMenu', menu: publicMenu })
+    }).catch(() => {}); // Silent fail
+  }
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init
+if (localStorage.getItem('hls_admin') === '1') loadMenu();
+</script>
+</body>
+</html>

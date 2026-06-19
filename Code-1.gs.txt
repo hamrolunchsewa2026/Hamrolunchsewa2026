@@ -1,0 +1,153 @@
+// ============================================================
+// HAMRO LUNCH SEWA — Google Apps Script Backend
+// Deploy this as a Web App (see SETUP.md for instructions)
+// ============================================================
+
+const SHEET_NAME_BOOKINGS = "Bookings";
+const SHEET_NAME_ABSENCES = "Absences";
+const NOTIFY_EMAIL = "chettrichandu1@gmail.com";
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+
+    if (action === "booking") {
+      return saveBooking(data);
+    } else if (action === "absence") {
+      return saveAbsence(data);
+    } else {
+      return respond({ success: false, error: "Unknown action" });
+    }
+  } catch (err) {
+    return respond({ success: false, error: err.toString() });
+  }
+}
+
+function doGet(e) {
+  const action = e.parameter.action;
+  if (action === "checkAbsence") {
+    return checkAbsence(e.parameter.phone, e.parameter.date, e.parameter.meal);
+  }
+  return respond({ success: true, message: "Hamro Lunch Sewa API running." });
+}
+
+// ── SAVE BOOKING ──────────────────────────────────────────
+function saveBooking(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME_BOOKINGS);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME_BOOKINGS);
+    sheet.appendRow([
+      "Timestamp", "Name", "Mobile", "Email", "Plan",
+      "Meal Preference", "Delivery Time", "Address",
+      "Start Date", "Special Instructions", "Payment Status"
+    ]);
+    sheet.getRange(1, 1, 1, 11).setFontWeight("bold").setBackground("#E8860A").setFontColor("#FFFFFF");
+    sheet.setFrozenRows(1);
+  }
+
+  const row = [
+    new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+    data.name,
+    data.phone,
+    data.email || "—",
+    data.plan,
+    data.meal,
+    data.time,
+    data.address,
+    data.startDate,
+    data.notes || "—",
+    "Payment Pending"
+  ];
+
+  sheet.appendRow(row);
+
+  // Auto-resize columns
+  sheet.autoResizeColumns(1, 11);
+
+  // Send notification email
+  try {
+    MailApp.sendEmail({
+      to: NOTIFY_EMAIL,
+      subject: "🍱 New TiffinBox Booking — " + data.name,
+      body: `New subscription booking received!\n\n` +
+            `Name: ${data.name}\n` +
+            `Mobile: ${data.phone}\n` +
+            `Plan: ${data.plan}\n` +
+            `Meal: ${data.meal}\n` +
+            `Delivery Time: ${data.time}\n` +
+            `Address: ${data.address}\n` +
+            `Start Date: ${data.startDate}\n` +
+            `Notes: ${data.notes || "None"}\n\n` +
+            `Check your Google Sheet for full details.`
+    });
+  } catch(emailErr) {
+    // Email failed silently — booking still saved
+  }
+
+  return respond({ success: true, message: "Booking saved!" });
+}
+
+// ── SAVE ABSENCE ──────────────────────────────────────────
+function saveAbsence(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_NAME_ABSENCES);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME_ABSENCES);
+    sheet.appendRow([
+      "Timestamp", "Name", "Mobile", "Absent Date", "Meal Skipped", "Status"
+    ]);
+    sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#C0392B").setFontColor("#FFFFFF");
+    sheet.setFrozenRows(1);
+  }
+
+  // Check if already marked
+  const data2d = sheet.getDataRange().getValues();
+  for (let i = 1; i < data2d.length; i++) {
+    if (String(data2d[i][2]) === String(data.phone) &&
+        String(data2d[i][3]) === String(data.date) &&
+        String(data2d[i][4]) === String(data.meal)) {
+      return respond({ success: false, error: "Already marked absent for this date and meal." });
+    }
+  }
+
+  sheet.appendRow([
+    new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+    data.name,
+    data.phone,
+    data.date,
+    data.meal,
+    "Confirmed — No Meal"
+  ]);
+
+  sheet.autoResizeColumns(1, 6);
+
+  return respond({ success: true, message: "Absence marked!" });
+}
+
+// ── CHECK ABSENCE ─────────────────────────────────────────
+function checkAbsence(phone, date, meal) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME_ABSENCES);
+  if (!sheet) return respond({ absent: false });
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][2]) === String(phone) &&
+        String(data[i][3]) === String(date) &&
+        String(data[i][4]) === String(meal)) {
+      return respond({ absent: true });
+    }
+  }
+  return respond({ absent: false });
+}
+
+// ── HELPER ────────────────────────────────────────────────
+function respond(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
